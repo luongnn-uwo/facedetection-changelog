@@ -12,8 +12,8 @@ MainActivity has 5 methods and 1 list:\
     \
     3. Recognize: To recognize student face once training was done. After that, it will update Attendance list accordingly upon confirm. \
                      Face detection used Haarcascade\
-                     Face recognition used LBPHFaceRecognizer
-                      \
+                     Face recognition used LBPHFaceRecognizer\
+    \
     4. Train : training classifier based on photo in Gallery. If there is no photo, need to go to InputFace.\
     \
     5. Email: send the Attendance list as CSV file via other Email app. \
