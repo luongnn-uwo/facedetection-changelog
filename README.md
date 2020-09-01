@@ -1,5 +1,6 @@
 # facedetect
 Face recognition for class attendance using OpenCV\
+For better recognition, next updated version will add ML, implementing TensorFlowLite. 
 "--------------------------------------------------------------------------------------------------------------------------------------"\
 This is an Android app I built for my MEng project. \
 The idea is to recognize students in class and update attendance.\
