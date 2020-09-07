@@ -19,16 +19,16 @@
         android:layout_height="wrap_content"
         android:layout_margin="5dp"
         android:layout_alignParentRight="true"
-        android:background="@drawable/bluebg"
+        android:background="@drawable/bluebg3"
         android:orientation="vertical"
         android:padding="5dp" >
             <Button
                 android:id="@+id/ConfirmButton"
                 android:layout_width="120dp"
                 android:layout_height="wrap_content"
-                android:layout_marginLeft="550dp"
                 android:layout_marginTop="260dp"
                 android:layout_alignParentRight="true"
+                android:layout_gravity="center_horizontal"
                 android:text="CONFIRM"
                 android:textSize="18sp" />
 
@@ -36,32 +36,48 @@
                 android:id="@+id/HeadImage"
                 android:layout_width="100dp"
                 android:layout_height="100dp"
-                android:layout_marginLeft="560dp"
                 android:layout_marginTop="20dp"
+                android:layout_marginRight="10dp"
                 android:layout_alignParentRight="true"
-
+                android:layout_gravity="center_horizontal"
                 android:contentDescription="HeadImage"
                 app:srcCompat="@drawable/headimage" />
 
-            <TextView
-                android:id="@+id/RecogName"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_marginLeft="560dp"
-                android:layout_marginTop="130dp"
-                android:layout_alignParentRight="true"
-                android:text="Student"
-                android:textSize="18sp" />
+        <TextView
+            android:id="@+id/RecogName"
+            android:layout_width="130dp"
+            android:layout_height="wrap_content"
+            android:layout_alignParentRight="true"
+            android:layout_centerHorizontal="true"
+            android:layout_gravity="center_horizontal"
+            android:layout_marginTop="160dp"
+            android:text=""
+            android:textAlignment="center"
+            android:textSize="18sp" />
+
 
             <TextView
-                android:id="@+id/Recognized"
-                android:layout_width="wrap_content"
+                android:id="@+id/RecogID"
+                android:layout_width="130dp"
                 android:layout_height="wrap_content"
-                android:layout_marginLeft="560dp"
-                android:layout_marginTop="180dp"
                 android:layout_alignParentRight="true"
-                android:text="Recognized !"
+                android:layout_centerHorizontal="true"
+                android:layout_marginTop="180dp"
+                android:layout_gravity="center_horizontal"
+                android:textAlignment="center"
+                android:text=""
                 android:textSize="18sp" />
+
+        <TextView
+            android:id="@+id/Recognized"
+            android:layout_width="130dp"
+            android:layout_height="wrap_content"
+            android:layout_alignParentRight="true"
+            android:layout_gravity="center_horizontal"
+            android:layout_marginTop="200dp"
+            android:text=""
+            android:textAlignment="center"
+            android:textSize="18sp" />
     </RelativeLayout>
 
 </RelativeLayout>

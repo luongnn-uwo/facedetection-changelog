@@ -28,9 +28,9 @@
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
         android:testOnly="true"
-        android:label="FaceDetect">
+        android:label="FaceDetect2">
         <activity
-            android:name=".MainActivity"
+            android:name=".Welcome"
             android:theme="@style/AppTheme.NoActionBar"
             android:screenOrientation="landscape">
 
@@ -40,6 +40,13 @@
             </intent-filter>
         </activity>
         <activity
+            android:name=".MainActivity"
+            android:theme="@style/AppTheme.NoActionBar"
+            android:screenOrientation="landscape"
+            android:label="InputFace">
+
+        </activity>
+        <activity
             android:name=".InputFace"
             android:theme="@style/AppTheme.NoActionBar"
             android:screenOrientation="landscape"
@@ -47,7 +54,7 @@
 
         </activity>
         <activity
-            android:name=".List_View"
+            android:name=".Gallery"
             android:theme="@style/AppTheme.NoActionBar"
             android:screenOrientation="landscape"
             android:label="Student List">
@@ -67,6 +74,14 @@
             android:label="Methods">
 
         </activity>
+        <activity
+            android:name=".CSVContent"
+            android:theme="@style/AppTheme.NoActionBar"
+            android:screenOrientation="landscape"
+            android:label="CSVContent">
+
+        </activity>
+
         <provider
             android:name="android.support.v4.content.FileProvider"
             android:authorities="com.luongnguyen.facedetect.provider"

@@ -1,13 +1,8 @@
 package com.luongnguyen.facedetect;
 
-import android.Manifest;
+
 import android.content.Intent;
-import android.content.pm.PackageManager;
 import android.os.Bundle;
-import android.support.annotation.NonNull;
-import android.support.v4.app.ActivityCompat;
-import android.support.v4.content.ContextCompat;
-import android.support.v7.app.AlertDialog;
 import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
@@ -16,87 +11,112 @@ import android.widget.Button;
 import android.support.design.widget.FloatingActionButton;
 import android.support.v7.app.AppCompatActivity;
 import android.widget.Toast;
+import android.widget.TextView;
 
 import java.io.File;
-import java.util.HashMap;
-import java.util.Map;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
 
-import static com.luongnguyen.facedetect.Methods.AttendanceList;
-import static com.luongnguyen.facedetect.Methods.GALLERY_FOLDER;
+
+import static com.luongnguyen.facedetect.Methods.DATABASE_FILE;
+import static com.luongnguyen.facedetect.Methods.DATA_FOLDER;
+import static com.luongnguyen.facedetect.Methods.ReadCSV;
+import static com.luongnguyen.facedetect.TFLiteAPIModel.ImageDatabase;
+import static com.luongnguyen.facedetect.Welcome.ClassID;
 
 
 public class MainActivity extends AppCompatActivity implements View.OnClickListener {
     private String TAG = ".ActivityMain";
-    Button RecognizeButton, InputFaceButton, ListViewButton, TrainButton;
+    Button RecognizeButton, InputFaceButton, GalleryButton,AttendListButton;
+    TextView ClassName;
     FloatingActionButton EmailButton;
-    private boolean GotPermission;
+    public static List<StudentInfo> TempList = new ArrayList<>();
+
+    public static Classifier myClassifier;
+    public static Classifier.Recognition myRecognition;
+    // MobileFaceNet model information
+    private static final int TF_OD_API_INPUT_SIZE = 112;
+    private static final boolean TF_OD_API_IS_QUANTIZED = false;
+    private static final String TF_OD_API_MODEL_FILE = "mobile_face_net.tflite";
+    private static final String TF_OD_API_LABELS_FILE = "file:///android_asset/labelmap.txt";
+    public static int NumofIDs = 0;
+    public static boolean PassClassflag =false;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
-        int PermissionCam = ContextCompat.checkSelfPermission(this, Manifest.permission.CAMERA);
-        int PermissionWrite = ContextCompat.checkSelfPermission(this, Manifest.permission.WRITE_EXTERNAL_STORAGE);
-        int PermissionRead = ContextCompat.checkSelfPermission(this, Manifest.permission.READ_EXTERNAL_STORAGE);
 
         // Layout items
         RecognizeButton = findViewById(R.id.RecognizeButton);
         InputFaceButton = findViewById(R.id.InputFaceButton);
-        ListViewButton = findViewById(R.id.ListViewButton);
-        TrainButton = findViewById(R.id.TrainButton);
+        GalleryButton = findViewById(R.id.GalleryButton);
         EmailButton = findViewById(R.id.EmailButton);
+        ClassName =  findViewById(R.id.ClassName);
+        AttendListButton = findViewById(R.id.AttendListButton);
 
         // Set onClick action
         RecognizeButton.setOnClickListener(this);
         InputFaceButton.setOnClickListener(this);
-        ListViewButton.setOnClickListener(this);
-        TrainButton.setOnClickListener(this);
+        GalleryButton.setOnClickListener(this);
         EmailButton.setOnClickListener(this);
+        AttendListButton.setOnClickListener(this);
 
-        // Request permission if not granted
-        GotPermission = PermissionCam == PackageManager.PERMISSION_GRANTED
-                && PermissionWrite == PackageManager.PERMISSION_GRANTED
-                && PermissionRead == PackageManager.PERMISSION_GRANTED;
-        if (!GotPermission) {
-            requestPermission();
-        }
-        // start reading from Classlist.csv file
+        //Set ClassID title on screen
+        ClassName.setText("CLASS ID: "+ClassID);
         Log.d(TAG,"start initializing Classlist");
-        Methods.InitializeClassList(this);
-        Log.d(TAG,"start initializing Gallery with some sample pics");
-        Methods.InitializeGallery(this);
+        Methods.ProcessInputCSV(this);
+        //Printest();
+
+        // start loading Gallery photos
+        Log.d(TAG,"start initializing Gallery with some sample pics for Demo");
+        Methods.DemoGallery(this);
+
+        // Initialize myClassifier from APIModel
+        try {
+            myClassifier =
+                    TFLiteAPIModel.create(
+                            getAssets(),
+                            TF_OD_API_MODEL_FILE,
+                            TF_OD_API_LABELS_FILE,
+                            TF_OD_API_INPUT_SIZE,
+                            TF_OD_API_IS_QUANTIZED);
+        } catch (final IOException e) {
+            e.printStackTrace();
+            Log.d(TAG, "Cannot initialize classifier!");
+            Toast.makeText(this , "Cannot initialize classifier!", Toast.LENGTH_SHORT).show();
+
+            finish();
+        }
+        Log.d(TAG, "Successfully initialize classifier!");
+
+        //Check Phone memory for existing database, create database folder if there is none
+        File RootPath = this.getExternalFilesDir(null);
+        File DataPath = new File(RootPath.getAbsolutePath() +"/"+ DATA_FOLDER);
+
+        if(!DataPath.exists()){
+            DataPath.mkdir();
+            Log.d(TAG, "Successfully create DATA folder !");
+        }
+
+        //Check and read info from Database text file if there is any
+        File FilePath = new File(DataPath.getAbsolutePath()+"/"+DATABASE_FILE);
+        if((FilePath.exists())&&(NumofIDs==0)){
+            Log.d(TAG , "Found database, can read from it now !");
+            Methods.ReadDatabase(ImageDatabase,this);
+            Log.d(TAG, "successfully read ImageDataBase file number of "+ImageDatabase.size()+"IDs stored" );
+            //Set next ID instance to save into Database
+            NumofIDs = ImageDatabase.size();
+
+        }else{
+            Log.d(TAG , "No data database to read from !");
+        }
+
+        Toast.makeText(this , "Found  Database of size: "+ImageDatabase.size(), Toast.LENGTH_SHORT).show();
     }
 
-    private void requestPermission() {
-        ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.CAMERA,
-                Manifest.permission.WRITE_EXTERNAL_STORAGE, Manifest.permission.READ_EXTERNAL_STORAGE}, 11);
-    }
 
-    @Override
-    public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
-        Map<String, Integer> perms = new HashMap<>();
-        perms.put(Manifest.permission.CAMERA, PackageManager.PERMISSION_DENIED);
-        perms.put(Manifest.permission.WRITE_EXTERNAL_STORAGE, PackageManager.PERMISSION_DENIED);
-        perms.put(Manifest.permission.READ_EXTERNAL_STORAGE, PackageManager.PERMISSION_DENIED);
-        for (int i = 0; i < permissions.length; i++) {
-            perms.put(permissions[i], grantResults[i]);
-        }
-        if (perms.get(Manifest.permission.CAMERA) == PackageManager.PERMISSION_GRANTED
-                && perms.get(Manifest.permission.WRITE_EXTERNAL_STORAGE) == PackageManager.PERMISSION_GRANTED
-                && perms.get(Manifest.permission.READ_EXTERNAL_STORAGE) == PackageManager.PERMISSION_GRANTED) {
-            GotPermission = true;
-        } else {
-            if (!ActivityCompat.shouldShowRequestPermissionRationale(this, Manifest.permission.CAMERA)
-                    || ActivityCompat.shouldShowRequestPermissionRationale(this, Manifest.permission.WRITE_EXTERNAL_STORAGE)
-                    || ActivityCompat.shouldShowRequestPermissionRationale(this, Manifest.permission.READ_EXTERNAL_STORAGE)) {
-                new AlertDialog.Builder(this)
-                        .setMessage("Please grant Camera and Storage permission for this application")
-                        .setPositiveButton("Dismiss all", null)
-                        .show();
-            }
-        }
-        super.onRequestPermissionsResult(requestCode, permissions, grantResults);
-    }
 
     @Override
     public void onClick(View v) {
@@ -110,17 +130,42 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                 Intent RecogAct = new Intent(MainActivity.this, Recognizer.class);
                 startActivity(RecogAct);
                 break;
-            case R.id.ListViewButton:
-                Intent ListAct = new Intent(MainActivity.this, List_View.class);
+            case R.id.GalleryButton:
+                Intent ListAct = new Intent(MainActivity.this, Gallery.class);
                 startActivity(ListAct);
                 break;
-            case R.id.TrainButton:
-                Methods.train(this);
-                break;
             case R.id.EmailButton:
-                Methods.Printest();
-                Methods.WriteCSV(AttendanceList,this);
+
                 Methods.EmailCSV(this);
+                break;
+            case R.id.AttendListButton:
+
+                File filepath = this.getExternalFilesDir(null);
+                FilePicker filePicker = new FilePicker(MainActivity.this,filepath);
+                filePicker.setFileListener(new FilePicker.FileSelectedListener() {
+                    @Override
+                    public void fileSelected(final File file) {
+                        String filepath = file.getAbsolutePath();
+                        if(filepath.contains("ClassList")){
+                            PassClassflag = true;
+                            TempList = ReadCSV(filepath,PassClassflag);
+
+                        }else{
+                            PassClassflag = false;
+                            TempList = ReadCSV(filepath,PassClassflag);
+                        }
+
+                        Log.i("onlick attend","created templist successfully");
+                        Log.i("Chosen File Name", file.getName());
+                        Intent ViewFile = new Intent(MainActivity.this, CSVContent.class);
+                        startActivity(ViewFile);
+
+                    }
+                })
+                ;
+                filePicker.setExtension("csv");
+                filePicker.showDialog();
+
                 break;
 
         }
@@ -147,6 +192,5 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
 
         return super.onOptionsItemSelected(item);
     }
-
 
 }//end of main

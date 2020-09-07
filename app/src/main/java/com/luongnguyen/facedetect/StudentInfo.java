@@ -5,6 +5,11 @@ public class StudentInfo{
     private String Name;
     private String Status;
     private String Date;
+    private String ClassID;
+
+    //--------------------------------------------------------------------------------------------//
+    //                    A class to control all information about student
+    //--------------------------------------------------------------------------------------------//
 
     public String getStatus() {
         return Status;
@@ -38,6 +43,10 @@ public class StudentInfo{
         Name = name;
     }
 
+    public String getClassID() {return ClassID;}
+
+    public void setClassID(String classID) {ClassID = classID;}
+
     @Override
     public String toString() {
         return "StudentInfo{" +
@@ -45,6 +54,7 @@ public class StudentInfo{
                 ", Name='" + Name + '\'' +
                 ", Status='" + Status + '\'' +
                 ", Date='" + Date + '\'' +
+                ", ClassID='" + Date + '\'' +
                 '}';
     }
 }

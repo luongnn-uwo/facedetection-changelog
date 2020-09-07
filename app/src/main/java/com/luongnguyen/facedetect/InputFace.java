@@ -1,6 +1,5 @@
 package com.luongnguyen.facedetect;
 
-
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.os.Bundle;
@@ -16,7 +15,6 @@ import android.view.Menu;
 import android.view.MenuItem;
 import android.widget.Toast;
 
-import org.bytedeco.javacpp.RealSense;
 import org.opencv.android.BaseLoaderCallback;
 import org.opencv.android.CameraBridgeViewBase;
 import org.opencv.android.JavaCameraView;
@@ -37,18 +35,25 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 
+import static com.luongnguyen.facedetect.MainActivity.myClassifier;
+import static com.luongnguyen.facedetect.MainActivity.myRecognition;
 import static com.luongnguyen.facedetect.Methods.GALLERY_FOLDER;
+import static com.luongnguyen.facedetect.TFLiteAPIModel.ImageDatabase;
 
 
 public class InputFace extends AppCompatActivity implements View.OnClickListener, CameraBridgeViewBase.CvCameraViewListener2 {
     private static final String TAG ="input_face" ;
     public static final int imgwidth = 400;
     public static final int imgheight = 400;
+
+    public static final int resize_width = 112;
+    public static final int resize_height = 112;
+
     EditText Studentname;
     Button SavephotoButton;
     ImageView CropImage;
     File cascFile;
-    CascadeClassifier faceDetector;
+    public static CascadeClassifier faceDetector;
     Mat mRgba, mGrey;
     JavaCameraView InputFaceView;
 
@@ -93,8 +98,6 @@ public class InputFace extends AppCompatActivity implements View.OnClickListener
         Studentname = findViewById(R.id.Studentname);
         CropImage = findViewById(R.id.CropImage);
 
-
-
         //Ask for permission
         isExternalStoragewritable();
         isExternalStoragereadable();
@@ -111,6 +114,10 @@ public class InputFace extends AppCompatActivity implements View.OnClickListener
 
         }
         InputFaceView.setCvCameraViewListener(this);
+
+
+
+
 
     }
     //---------------------------------------------------------------------------------------------//
@@ -164,10 +171,8 @@ public class InputFace extends AppCompatActivity implements View.OnClickListener
             case R.id.SavephotoButton:
                 try {
                     Takephoto(mRgba);
-
                 } catch (Exception e) {
                     e.printStackTrace();
-
                 }
 
                 break;
@@ -215,11 +220,10 @@ public class InputFace extends AppCompatActivity implements View.OnClickListener
         }else{
             return false;
         }
-
     }
 
     //---------------------------------------------------------------------------------------------//
-    // METHOD OF TAKING PHOTO FOR INPUT  STUDENT IMAGES
+    //                     METHOD OF TAKING PHOTO FOR INPUT  STUDENT IMAGES
     //---------------------------------------------------------------------------------------------//
 
     public void Takephoto(Mat rgbaMat){
@@ -227,7 +231,7 @@ public class InputFace extends AppCompatActivity implements View.OnClickListener
 
         File RootPath = getExternalFilesDir(null);
         File GalleryPath = new File(RootPath.getAbsolutePath() +"/"+ GALLERY_FOLDER);
-        //Create gallery folder if not exists
+        //Create list_view folder if not exists
         if(!GalleryPath.exists()){
             GalleryPath.mkdir();
             Toast.makeText(this, "Gallery was created", Toast.LENGTH_SHORT).show();
@@ -247,7 +251,8 @@ public class InputFace extends AppCompatActivity implements View.OnClickListener
                         size = dir.listFiles().length;
                         filepath = dir.getAbsolutePath() + "/" + InputName + size + ".jpg";
                         Redundantflag = true;
-                        Toast.makeText(this, "student exists, saved to archived folder", Toast.LENGTH_SHORT).show();
+                        Toast.makeText(this, "Student name exists in Gallery",
+                                                                        Toast.LENGTH_SHORT).show();
                     }
                 }
 
@@ -270,27 +275,53 @@ public class InputFace extends AppCompatActivity implements View.OnClickListener
         MatOfRect detectedFaces = new MatOfRect();
         faceDetector.detectMultiScale(rgbaMat, detectedFaces);
         Rect[] facesArray = detectedFaces.toArray();
-        int maxvalue = 0;
+        if(facesArray.length>0){
 
-        //take only the biggest face detected (ignore small face-like patterns)
-        for (Rect rect : facesArray) {
-            if(rect.width > maxvalue){
-                maxvalue =rect.width;
-            }
-        }
-        //Write image to given file path
-        for (Rect rect : facesArray) {
-            if(rect.width==maxvalue) {
-                Rect rectCrop = new Rect(rect.x, rect.y, rect.width, rect.height);
-                Mat image_roi = new Mat(grayMat, rectCrop);
-                Imgproc.resize(image_roi, image_roi, new Size(imgwidth, imgheight));
-                Imgcodecs.imwrite(filepath, image_roi);
+            int maxvalue = 0;
+            //take only the biggest face detected (ignore small face-like patterns)
+            for (Rect rect : facesArray) {
+                if(rect.width > maxvalue){
+                    maxvalue =rect.width;
+                }
             }
 
+
+            Bitmap InputBmp = Bitmap.createBitmap(resize_width, resize_height, Bitmap.Config.ARGB_8888);
+            Mat InputMat = new Mat();
+
+
+            //Write image to given filepath
+            for (Rect rect : facesArray) {
+                if(rect.width==maxvalue) {
+                    Rect rectCrop = new Rect(rect.x, rect.y, rect.width, rect.height);
+                    Mat image_roi = new Mat(grayMat, rectCrop);
+                    Imgproc.resize(image_roi, image_roi, new Size(imgwidth, imgheight));
+                    Imgcodecs.imwrite(filepath, image_roi);
+
+                    //Tensorflow input modify
+                    Imgproc.resize(image_roi,InputMat, new Size(resize_width, resize_height));
+                    Utils.matToBitmap(InputMat, InputBmp);
+                }
             }
-        //Show crop face as thumbnail at corner
-        CropImage.setImageBitmap(BitmapFactory.decodeFile(filepath));
+            //Start recognize inputface to collect Feature information.
+            myRecognition = myClassifier.FaceRecognizer(InputBmp,true,InputName);
+            Log.d(TAG, "Found myrecognition info is:"+ myRecognition);
+
+            //Update database with output myRecognition and write down copy of Database
+            ImageDatabase.put(myRecognition,InputName);
+            Log.d(TAG, "successfully update ImageDatabase info ");
+
+            Methods.WriteDatabase(ImageDatabase,this);
+            Log.d(TAG, "successfully write myrecognition info to data file");
+
+            //Show crop face as thumbnail at corner
+            CropImage.setImageBitmap(BitmapFactory.decodeFile(filepath));
+            Log.d(TAG, "myrecognition - above is done:");
+
+        }else{
+            Toast.makeText(this, "Cannot find any face", Toast.LENGTH_SHORT).show();
         }
+    }
 
 
 }
