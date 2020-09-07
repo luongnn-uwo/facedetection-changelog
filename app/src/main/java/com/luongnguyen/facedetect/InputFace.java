@@ -231,7 +231,7 @@ public class InputFace extends AppCompatActivity implements View.OnClickListener
 
         File RootPath = getExternalFilesDir(null);
         File GalleryPath = new File(RootPath.getAbsolutePath() +"/"+ GALLERY_FOLDER);
-        //Create list_view folder if not exists
+        //Create gallery folder if not exists
         if(!GalleryPath.exists()){
             GalleryPath.mkdir();
             Toast.makeText(this, "Gallery was created", Toast.LENGTH_SHORT).show();
